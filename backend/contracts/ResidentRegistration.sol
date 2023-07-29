@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0 <0.9.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "./AgeCalculator.sol";
 
 struct Address {
     string street;
@@ -22,7 +23,7 @@ struct ResidentManagement {
     address[] residentAddresses;
 }
 
-contract ResidentRegistration is Ownable {
+contract ResidentRegistration is Ownable, AgeCalculator {
     ResidentManagement public residentManagement;
     uint public taxRate = 10;
 
@@ -96,17 +97,23 @@ contract ResidentRegistration is Ownable {
     // owner functions end
 
     // resident functions
-    //"selami", 19,"sokak", "samsun", "mahalle", 55800
+    //"selami", "sokak", "samsun", "mahalle", 55800, 31,07,1999
     function registerResident(
         string memory _name,
-        uint _age,
         string memory _street,
         string memory _city,
         string memory _state,
-        uint _zip
+        uint _zip,
+        uint DoBDay,
+        uint DoBMonth,
+        uint DoBYear
     ) public shouldNotExist {
         residentManagement.residentList[msg.sender].name = _name;
-        residentManagement.residentList[msg.sender].age = _age;
+        residentManagement.residentList[msg.sender].age = this.calculateAge(
+            DoBDay,
+            DoBMonth,
+            DoBYear
+        );
         residentManagement.residentList[msg.sender].income = 0;
         residentManagement.residentList[msg.sender].taxDept = 0;
         residentManagement.residentList[msg.sender].addr.street = _street;
@@ -119,18 +126,24 @@ contract ResidentRegistration is Ownable {
 
     function updateResident(
         string memory _name,
-        uint _age,
         string memory _street,
         string memory _city,
         string memory _state,
-        uint _zip
+        uint _zip,
+        uint DoBDay,
+        uint DoBMonth,
+        uint DoBYear
     ) public shouldExist {
         require(
             residentManagement.residentList[msg.sender].age != 0,
             "Resident not registered"
         );
         residentManagement.residentList[msg.sender].name = _name;
-        residentManagement.residentList[msg.sender].age = _age;
+        residentManagement.residentList[msg.sender].age = this.calculateAge(
+            DoBDay,
+            DoBMonth,
+            DoBYear
+        );
         residentManagement.residentList[msg.sender].addr.street = _street;
         residentManagement.residentList[msg.sender].addr.city = _city;
         residentManagement.residentList[msg.sender].addr.state = _state;
@@ -161,7 +174,9 @@ contract ResidentRegistration is Ownable {
     }
 
     //login as resident
-    function getResident() public view shouldExist returns (Resident memory) {}
+    function getMeResident() public view shouldExist returns (Resident memory) {
+        return residentManagement.residentList[msg.sender];
+    }
 
     function getTaxDept() public view shouldExist returns (uint) {
         return residentManagement.residentList[msg.sender].taxDept;
