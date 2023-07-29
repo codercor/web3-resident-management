@@ -1,0 +1,2 @@
+# web3-citizenship-management
+ This is a project to create a blockchain prototype for the registration of citizens. The aim is to create a secure and reliable system for future verification. The project includes front-end development with a login page where users can register on the blockchain and a back-end Solidity implementation for the registration of clients on the Ethereum chain. This GitHub repository contains all the necessary code and documentation for the project.
