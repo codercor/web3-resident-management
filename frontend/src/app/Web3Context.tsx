@@ -5,7 +5,16 @@ import Web3, { ContractAbi, RpcError, Contract } from "web3";
 import { toast } from "react-toastify";
 
 const errorParser = (err: any) => {
-  return err.data.message.split("revert ")[1];
+  console.log("Error ", { ...err, message: err?.message });
+
+  let errorMessage = "";
+
+  if (typeof err.data?.message == "string")
+    errorMessage = err.data.message.split("revert ")[1].split('"')[0];
+  else if (typeof err?.message == "string")
+    errorMessage = err.message.split("revert ")[1].split('"')[0];
+
+  return errorMessage;
 };
 
 interface Web3ContextType {
@@ -23,9 +32,9 @@ interface Web3ContextType {
   profile: {
     name: string;
     address: { city: string; state: string; street: string; zip: number };
-    day: number;
-    month: number;
-    year: number;
+    age: number;
+    taxDept: number;
+    income: number;
   };
 
   registerResident: (
@@ -39,6 +48,18 @@ interface Web3ContextType {
     year: number
   ) => Promise<any>;
   getProfile: () => Promise<any>;
+  declareIncome: (income: number) => Promise<any>;
+  payTax: (taxDept: number) => Promise<any>;
+  updateProfile: (
+    name: string,
+    city: string,
+    state: string,
+    street: string,
+    zip: number,
+    day: number,
+    month: number,
+    year: number
+  ) => Promise<any>;
 }
 
 export const initialContext: Web3ContextType = {
@@ -63,9 +84,9 @@ export const initialContext: Web3ContextType = {
       street: "",
       zip: 1,
     },
-    day: 1,
-    month: 1,
-    year: 1990,
+    age: 0,
+    taxDept: 0,
+    income: 0,
   },
   registerResident: async (
     name: string,
@@ -78,6 +99,18 @@ export const initialContext: Web3ContextType = {
     year: number
   ) => {},
   getProfile: async () => {},
+  declareIncome: async (income: number) => {},
+  payTax: async (taxDept: number) => {},
+  updateProfile: async (
+    name: string,
+    city: string,
+    state: string,
+    street: string,
+    zip: number,
+    day: number,
+    month: number,
+    year: number
+  ) => {},
 };
 
 export const Web3Context = createContext<Web3ContextType>(initialContext);
@@ -98,7 +131,7 @@ const Web3ContextProvider = ({ children }: React.PropsWithChildren) => {
           };
           console.log(`Selected account is ${accounts[0]}`);
         })
-        .catch((err: RpcError) => {
+        .catch((err: any) => {
           toast.error(err.message);
         });
       window.ethereum.on("accountsChanged", function (accounts: string[]) {
@@ -152,15 +185,15 @@ const Web3ContextProvider = ({ children }: React.PropsWithChildren) => {
           isLoggedIn: true,
           profile: {
             address: {
-              street: res.addr.street as string,
-              city: res.addr.city as string,
-              state: res.addr.state as string,
-              zip: res.addr.zip as number,
+              street: res.addr.street,
+              city: res.addr.city,
+              state: res.addr.state,
+              zip: res.addr.zip,
             },
-            name: "",
-            day: 0,
-            month: 0,
-            year: 0,
+            income: parseFloat(res.income),
+            name: res.name,
+            age: parseInt(res.age),
+            taxDept: parseInt(res.taxDept),
           },
         });
       })
@@ -182,15 +215,24 @@ const Web3ContextProvider = ({ children }: React.PropsWithChildren) => {
     if (context.isLoggedIn) {
       getOwner()
         .then((res: any) => {
-          console.log("is admin", (res as string) === context.selectedAccount);
-          if ((res as string) === context.selectedAccount) {
+          console.log(
+            "is admin",
+            (res as string).toLowerCase() ===
+              context.selectedAccount.toLowerCase()
+          );
+
+          if (
+            (res as string).toLowerCase() ===
+            context.selectedAccount.toLowerCase()
+          ) {
             setContext({
               ...context,
               isAdmin: true,
             });
+            toast.success("Admin logged in!");
           }
         })
-        .catch((err: Error) => {
+        .catch((err: any) => {
           console.log(err);
         });
     }
@@ -214,6 +256,7 @@ const Web3ContextProvider = ({ children }: React.PropsWithChildren) => {
       .registerResident(name, city, state, street, zip, day, month, year)
       .send({
         from: context.selectedAccount,
+        gas: "1000000",
       })
       .then((res: any) => {
         toast.success("Registered! Loggin in automatically...");
@@ -228,6 +271,77 @@ const Web3ContextProvider = ({ children }: React.PropsWithChildren) => {
     setContext(initialContext);
   };
 
+  const declareIncome = async (income: number) => {
+    if (!context.isInitialized) {
+      await connect();
+    }
+    context.contract.methods
+      // @ts-ignore
+      .declareIncome(income)
+      .send({
+        from: context.selectedAccount,
+        gas: "1000000",
+      })
+      .then((res: any) => {
+        toast.success("Income declared!");
+        getProfile();
+      })
+      .catch((err: any) => {
+        toast.error(errorParser(err));
+      });
+  };
+
+  const payTax = async (price: number) => {
+    //price as a wei
+    const _price = context.web3.utils.toWei(price + "", "ether");
+    if (!context.isInitialized) {
+      await connect();
+    }
+    context.contract.methods
+      .payTax()
+      .send({
+        from: context.selectedAccount,
+        gas: "1000000",
+        value: price + "",
+      })
+      .then((res: any) => {
+        toast.success("Tax paid!");
+        getProfile();
+      })
+      .catch((err: any) => {
+        toast.error(errorParser(err));
+      });
+  };
+
+  const updateProfile = async (
+    name: string,
+    city: string,
+    state: string,
+    street: string,
+    zip: number,
+    day: number,
+    month: number,
+    year: number
+  ) => {
+    if (!context.isInitialized) {
+      await connect();
+    }
+    context.contract.methods
+      // @ts-ignore
+      .updateResident(name, street, city, state, zip, day, month, year)
+      .send({
+        from: context.selectedAccount,
+        gas: "1000000",
+      })
+      .then((res: any) => {
+        toast.success("Profile updated!");
+        getProfile();
+      })
+      .catch((err: any) => {
+        toast.error(errorParser(err));
+      });
+  };
+
   return (
     <Web3Context.Provider
       value={{
@@ -237,6 +351,9 @@ const Web3ContextProvider = ({ children }: React.PropsWithChildren) => {
         getMeResident,
         registerResident,
         getProfile,
+        declareIncome,
+        payTax,
+        updateProfile,
       }}
     >
       {children}

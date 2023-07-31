@@ -32,12 +32,21 @@ const RegisterForm = () => {
         Register
       </p>
       <Input
-        placeholder="Name"
+        placeholder="Full Name"
         type="text"
         value={registerFormData.name}
         name="name"
         onChange={handleChangeRegisterForm}
         key="name"
+      />
+      <p className="text-center">Address</p>
+      <Input
+        placeholder="Street"
+        type="text"
+        value={registerFormData.street}
+        name="street"
+        onChange={handleChangeRegisterForm}
+        key="street"
       />
       <Input
         placeholder="City"
@@ -62,6 +71,7 @@ const RegisterForm = () => {
         onChange={handleChangeRegisterForm}
         key={"zip"}
       />
+      <p className="text-center">Date of Birth</p>
       <Input
         placeholder="Day"
         min={1}
@@ -100,6 +110,7 @@ const RegisterForm = () => {
       <Button
         disabled={
           !registerFormData.name ||
+          !registerFormData.street ||
           !registerFormData.city ||
           !registerFormData.state ||
           !registerFormData.zip ||
@@ -117,7 +128,7 @@ const RegisterForm = () => {
             Number(registerFormData.DoBDay),
             Number(registerFormData.DoBMonth),
             Number(registerFormData.DoBYear)
-          )
+          );
         }}
       >
         Register
