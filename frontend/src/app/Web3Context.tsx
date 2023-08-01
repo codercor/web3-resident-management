@@ -1,5 +1,5 @@
 import { createContext } from "react";
-import ResidentRegistrationContract from "../../../backend/build/contracts/ResidentRegistration.json";
+import ResidentRegistrationContract from "../abi/ResidentRegistration.json";
 import { useEffect, useState } from "react";
 import Web3, { ContractAbi, RpcError, Contract } from "web3";
 import { toast } from "react-toastify";
