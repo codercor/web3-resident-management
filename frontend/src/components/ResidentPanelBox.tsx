@@ -11,7 +11,7 @@ const ResidentPanelBox = () => {
     <div
       className="relative 
   flex flex-col md:flex-row justify-center items-center gap-10
-  border border-red-500
+  border 
   w-[80vw] 
   "
     >
