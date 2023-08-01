@@ -4,16 +4,17 @@ import { useEffect, useState } from "react";
 import Web3, { ContractAbi, RpcError, Contract } from "web3";
 import { toast } from "react-toastify";
 
-const errorParser = (err: any) => {
-  console.log("Error ", { ...err, message: err?.message });
-
+export const errorParser = (err: any) => {
   let errorMessage = "";
-
-  if (typeof err.data?.message == "string")
-    errorMessage = err.data.message.split("revert ")[1].split('"')[0];
-  else if (typeof err?.message == "string")
-    errorMessage = err.message.split("revert ")[1].split('"')[0];
-
+  console.log("Error ", { ...err, message: err?.message });
+  try {
+    if (typeof err.data?.message == "string")
+      errorMessage = err.data.message.split("reverted")[1].split('"')[0];
+    else if (typeof err?.message == "string")
+      errorMessage = err.message.split("reverted")[1].split('"')[0];
+  } catch (error) {
+    errorMessage = "Process Failed!";
+  }
   return errorMessage;
 };
 
@@ -28,7 +29,7 @@ interface Web3ContextType {
   getMeResident: () => Promise<any>;
   isAdmin: boolean;
   isLoggedIn: boolean;
-
+  residents: any[];
   profile: {
     name: string;
     address: { city: string; state: string; street: string; zip: number };
@@ -60,6 +61,10 @@ interface Web3ContextType {
     month: number,
     year: number
   ) => Promise<any>;
+  setTaxRate: (taxRate: number) => Promise<any>;
+  getAllResidents: () => Promise<any>;
+  getResident: (walletAddress: string) => Promise<any>;
+  findResidentByName: (name: string) => Promise<any>;
 }
 
 export const initialContext: Web3ContextType = {
@@ -67,15 +72,16 @@ export const initialContext: Web3ContextType = {
   accounts: [],
   contract: new Contract(
     ResidentRegistrationContract.abi,
-    ResidentRegistrationContract.networks[5777].address
+    ResidentRegistrationContract.networks[11155111].address
   ),
   selectedAccount: "",
   isInitialized: false,
-  connect: async () => {},
-  disconnect: () => {},
-  getMeResident: async () => {},
+  connect: async () => { },
+  disconnect: () => { },
+  getMeResident: async () => { },
   isAdmin: false,
   isLoggedIn: false,
+  residents: [],
   profile: {
     name: "",
     address: {
@@ -97,10 +103,10 @@ export const initialContext: Web3ContextType = {
     day: number,
     month: number,
     year: number
-  ) => {},
-  getProfile: async () => {},
-  declareIncome: async (income: number) => {},
-  payTax: async (taxDept: number) => {},
+  ) => { },
+  getProfile: async () => { },
+  declareIncome: async (income: number) => { },
+  payTax: async (taxDept: number) => { },
   updateProfile: async (
     name: string,
     city: string,
@@ -110,7 +116,11 @@ export const initialContext: Web3ContextType = {
     day: number,
     month: number,
     year: number
-  ) => {},
+  ) => { },
+  setTaxRate: async (taxRate: number) => { },
+  getAllResidents: async () => { },
+  getResident: async (walletAddress: string) => { },
+  findResidentByName: async (name: string) => { }
 };
 
 export const Web3Context = createContext<Web3ContextType>(initialContext);
@@ -119,6 +129,7 @@ const Web3ContextProvider = ({ children }: React.PropsWithChildren) => {
   const [context, setContext] = useState(initialContext);
 
   const connect = async () => {
+    // @ts-ignore
     let provider = window.ethereum;
     let newContext = { ...context };
     if (typeof provider !== "undefined") {
@@ -134,6 +145,7 @@ const Web3ContextProvider = ({ children }: React.PropsWithChildren) => {
         .catch((err: any) => {
           toast.error(err.message);
         });
+      // @ts-ignore
       window.ethereum.on("accountsChanged", function (accounts: string[]) {
         newContext = {
           ...newContext,
@@ -218,7 +230,7 @@ const Web3ContextProvider = ({ children }: React.PropsWithChildren) => {
           console.log(
             "is admin",
             (res as string).toLowerCase() ===
-              context.selectedAccount.toLowerCase()
+            context.selectedAccount.toLowerCase()
           );
 
           if (
@@ -342,6 +354,69 @@ const Web3ContextProvider = ({ children }: React.PropsWithChildren) => {
       });
   };
 
+  //owner functions
+
+  const setTaxRate = async (taxRate: number) => {
+    if (!context.isInitialized) {
+      await connect();
+    }
+    context.contract.methods
+      // @ts-ignore
+      .setTaxRate(taxRate)
+      .send({
+        from: context.selectedAccount,
+        gas: "1000000",
+      })
+      .then((res: any) => {
+        toast.success("Tax rate set!");
+        getProfile();
+      })
+      .catch((err: any) => {
+        toast.error(errorParser(err));
+      });
+  }
+
+  const getAllResidents = async () => {
+    if (!context.isInitialized) {
+      await connect();
+    }
+
+    context.contract.methods
+      .getAllResident()
+      .call({ from: context.selectedAccount })
+      .then((result) => {
+        console.log("residents result", result);
+        setContext({
+          ...context,
+          residents: result as any[],
+        });
+        toast.success("Residents fetched!");
+      }).catch((err) => {
+        toast.error(errorParser(err));
+      });
+  }
+
+  const getResident = async (walletAddress: string) => {
+    if (!context.isInitialized) {
+      await connect();
+    }
+    return context.contract.methods
+      // @ts-ignore
+      .getResident(walletAddress)
+      .call({ from: context.selectedAccount });
+  }
+
+  const findResidentByName = async (name: string) => {
+    if (!context.isInitialized) {
+      await connect();
+    }
+    return context.contract.methods
+      // @ts-ignore
+      .searchResidentByName(name)
+      .call({ from: context.selectedAccount });
+  }
+
+
   return (
     <Web3Context.Provider
       value={{
@@ -354,6 +429,10 @@ const Web3ContextProvider = ({ children }: React.PropsWithChildren) => {
         declareIncome,
         payTax,
         updateProfile,
+        setTaxRate,
+        getAllResidents,
+        getResident,
+        findResidentByName
       }}
     >
       {children}

@@ -8,11 +8,12 @@ import Web3ContextProvider from "./Web3Context";
 import AuthenticantionBox from "../components/AuthenticationBox";
 import NotConnectedBox from "@/components/NotConnectedBox";
 import ResidentPanelBox from "@/components/ResidentPanelBox";
+import AdminPanelBox from "@/components/AdminPanelBox";
 
 function HomeContent() {
-  const { selectedAccount, isInitialized, connect, disconnect, isLoggedIn } =
+  const { selectedAccount, isInitialized, connect, disconnect, isLoggedIn, isAdmin } =
     useContext(Web3Context);
-  useEffect(() => {}, []);
+  useEffect(() => { }, []);
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
       <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
@@ -47,7 +48,7 @@ function HomeContent() {
 
       {selectedAccount ? (
         isLoggedIn ? (
-          <ResidentPanelBox />
+          isAdmin ? <AdminPanelBox /> : <ResidentPanelBox />
         ) : (
           <AuthenticantionBox />
         )
