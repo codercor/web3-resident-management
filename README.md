@@ -19,7 +19,6 @@ This is a blockchain prototype for citizen registration, utilizing a secure fron
 - Solidity: Smart contract development language for Ethereum.
 - React: Front-end JavaScript library for building user interfaces.
 - Web3.js: JavaScript library for interacting with Ethereum.
-- Ethereum: Blockchain platform for decentralized applications.
 
 ## Contributions
 
@@ -34,5 +33,5 @@ This project is licensed under the [MIT License](LICENSE).
 For any questions or inquiries, please contact:
 
 Your Name
-Email: your.email@example.com
-LinkedIn: [Your LinkedIn Profile](https://www.linkedin.com/in/your-username/)
+Email: mustafa.cor@outlook.com
+LinkedIn: [Your LinkedIn Profile](https://www.linkedin.com/in/codercor/)
