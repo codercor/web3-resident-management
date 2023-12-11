@@ -34,4 +34,4 @@ For any questions or inquiries, please contact:
 
 Your Name
 Email: mustafa.cor@outlook.com
-LinkedIn: [Your LinkedIn Profile](https://www.linkedin.com/in/codercor/)
+LinkedIn: [My LinkedIn Profile](https://www.linkedin.com/in/codercor/)
